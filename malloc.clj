@@ -194,6 +194,8 @@
 
     (main)
 
+    ; TODO: offset here to 0x2000 or something like that.
+
     ; A degenerate free-space marker, also the head of our free list
     (word :heap_start (label-address :ram_free_struct))
     (literal 0)

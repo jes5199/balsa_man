@@ -1,0 +1,16 @@
+Here's a little DSL in clojure for writing DCPU16 assembler.
+I could imagine it growing into a macro language.
+
+So far I've implemented only malloc and free. They might be generally useful, it's too early to know.
+
+TODO:
+  explicit offsets:
+    I should support the ORG instruction
+
+  output my own binaries
+
+  pointer tricks:
+    explicit near jumps using SUB PC literal and ADD PC literal
+    label math - label plus/minus offset, to address
+
+
