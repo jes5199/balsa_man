@@ -1,4 +1,5 @@
 (load-file "assembly.clj")
+(load-file "helpers.clj")
 
 (def Nil 0xFFFF)
 (def null 0x0)
@@ -18,14 +19,6 @@
     (SET (ram X 1) Nil)
     (SET (ram X 2) (- heap-size 1))
   )
-)
-
-(defn goto [addr]
-  (SET PC, addr)
-)
-
-(defn return []
-  (goto POP)
 )
 
 (def malloc-header-size 2)
@@ -178,7 +171,7 @@
 
 (defn main []
   (concat
-    (label :program_start)
+    (label :main)
     (SET X, 31)
     (JSR :malloc)
     (JSR :free)
@@ -201,7 +194,7 @@
     (literal 0)
     ; A legitimate free-space marker
     (word :ram_free_struct Nil)
-    (word :ram_free_size 0x1000)
+    (word :ram_free_size 0x7000)
   )
 )
 
