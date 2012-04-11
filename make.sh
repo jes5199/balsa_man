@@ -1,2 +1,2 @@
 mkdir -p out
-clj sqrt.clj > out/sqrt.asm
+clj generate-example.clj > out/sqrt.asm

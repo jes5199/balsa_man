@@ -108,7 +108,7 @@
   )
 )
 
-(defn PROGRAM []
+(defn SQRT-EXAMPLE-PROGRAM []
   (concat
     (goto :main)
 
@@ -123,5 +123,3 @@
     (FreeMemory :heap_start)
   )
 )
-
-(assembler (PROGRAM))
