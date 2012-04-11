@@ -6,6 +6,22 @@
   (goto POP)
 )
 
+(defn add32plus16 [high low plus]
+  (concat
+    (ADD low, plus)
+    (ADD high, O)
+  )
+)
+
+(defn add32plus32 [high low plushigh pluslow]
+  (concat
+    (ADD low, pluslow)
+    (ADD high, O)
+    (ADD high, plushigh)
+  )
+)
+
+
 (defn div32by16 [high low divisor]
   (concat
     (DIV low, divisor)
