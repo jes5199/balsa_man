@@ -102,13 +102,16 @@
     (SET I, (ram A))
     (SET J, (ram A 1))
 
+    (SET X, (ram A))
+    (JSR :print_decimal)
+    (JSR :crlf)
+
     (SET X, 0x4000)
     (JSR :sqrt)
 
     (SET C, X)
     (JSR :print_decimal)
     (JSR :crlf)
-    (JSR :print_decimal)
 
     (label :crash) (goto :crash)
   )

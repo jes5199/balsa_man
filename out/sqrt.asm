@@ -184,6 +184,42 @@ SET C, POP
 SET B, POP
 SET A, POP
 SET PC, POP
+:print_ascii
+SET Y, [0x7fff]
+ADD Y, 0x8000
+SET [Y], X
+ADD [0x7fff], 0x0001
+MOD [0x7fff], 0x0400
+SET PC, POP
+:print_decimal
+SET PUSH, A
+SET PUSH, B
+SET A, X
+SET B, 0x2710
+:print_decimal_shrink_b
+IFG A, B
+SET PC, print_decimal_digit
+DIV B, 0x000a
+SET PC, print_decimal_shrink_b
+:print_decimal_digit
+SET C, A
+DIV C, B
+MOD C, 0x000a
+ADD C, 0x0030
+SET X, C
+JSR print_ascii
+DIV B, 0x000a
+IFN B, 0x0000
+SET PC, print_decimal_digit
+SET B, POP
+SET A, POP
+SET PC, POP
+:crlf
+DIV [0x7fff], 0x0020
+MUL [0x7fff], 0x0020
+ADD [0x7fff], 0x0020
+MOD [0x7fff], 0x0400
+SET PC, POP
 :main
 SET X, 0x0002
 JSR malloc
@@ -196,8 +232,14 @@ SET X, C
 JSR free
 SET I, [A]
 SET J, [0x0001+A]
+SET X, [A]
+JSR print_decimal
+JSR crlf
 SET X, 0x4000
 JSR sqrt
+SET C, X
+JSR print_decimal
+JSR crlf
 :crash
 SET PC, crash
 :heap_start
