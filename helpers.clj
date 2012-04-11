@@ -38,22 +38,43 @@
   )
 )
 
-(defn div32by32 [high low divisorhigh divisorlow]
-  ; This may be complicated enough to become a function instead of a macro.
-  (let [
-      exit_label  (keyword (gensym "div32by32_exit"))
-      start_label (keyword (gensym "div32by32_start"))
-    ]
-    (concat
-      (label start_label)
+(defn Div32by32 []
+  (concat
+    (label :div32by32)
+    (SET PUSH, A)
+    (SET PUSH, B)
 
-      (IFE divisorhigh 0) (goto exit_label)
-      (rightshift32 divisorhigh divisorlow 1)
-      (rightshift32 high low 1)
-      (goto start_label)
+    (SET A, X)
+    (SET B, Y)
 
-      (label exit_label)
-      (div32by16 high low divisorlow)
-    )
+    (SET X, 2)
+    (JSR :malloc)
+    (SET Y, X)
+    (SET (ram Y  ), (ram B  ))
+    (SET (ram Y 1), (ram B 1))
+
+    (SET X, 2)
+    (JSR :malloc)
+    (SET (ram X  ), (ram A  ))
+    (SET (ram X 1), (ram A 1))
+
+    (label :div32by32_next)
+
+    (IFE (ram Y 1) 0) (goto :div32by32_exit)
+    (rightshift32 (ram X 1) (ram X) 1)
+    (rightshift32 (ram Y 1) (ram Y) 1)
+    (goto :div32by32_next)
+
+    (label :div32by32_exit)
+    (div32by16 (ram X 1) (ram X) (ram Y))
+
+    (SET PUSH, X)
+    (SET X, Y)
+    (JSR :free)
+    (SET X, POP)
+
+    (SET B, POP)
+    (SET A, POP)
+    (return)
   )
 )

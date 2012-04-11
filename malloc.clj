@@ -169,7 +169,7 @@
   )
 )
 
-(defn main []
+(defn malloc-example-main []
   (concat
     (label :main)
     (SET X, 31)
@@ -179,18 +179,12 @@
   )
 )
 
-(defn PROGRAM []
+(defn FreeMemory [label]
   (concat
-    (goto :main)
-    (Malloc (label-address :heap_start))
-    (Free (label-address :heap_start))
-
-    (main)
-
     ; TODO: offset here to 0x2000 or something like that.
 
     ; A degenerate free-space marker, also the head of our free list
-    (word :heap_start (label-address :ram_free_struct))
+    (word label (label-address :ram_free_struct))
     (literal 0)
     ; A legitimate free-space marker
     (word :ram_free_struct Nil)
@@ -198,4 +192,16 @@
   )
 )
 
-(assembler (PROGRAM) )
+(defn MALLOC-EXAMPLE-PROGRAM []
+  (concat
+    (goto :main)
+    (Malloc (label-address :heap_start))
+    (Free (label-address :heap_start))
+
+    (malloc-example-main)
+
+    (FreeMemory :heap_start)
+  )
+)
+
+; (assembler (PROGRAM) )
