@@ -2,6 +2,8 @@ Here's a little DSL in clojure for writing DCPU16 assembler.
 I could imagine it growing into a macro language.
 
 I'm including my general-purpose functions as I implement them.
+I am not currently using an ABI compliant style, you'll have to convince me that it's really worth it.
+
 So far I've implemented:
   malloc and free (using a linked list within a preset memory range)
   sqrt
