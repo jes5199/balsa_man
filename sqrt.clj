@@ -107,6 +107,8 @@
 
     (SET C, X)
     (JSR :print_decimal)
+    (JSR :crlf)
+    (JSR :print_decimal)
 
     (label :crash) (goto :crash)
   )
@@ -123,6 +125,7 @@
     (Free (label-address :heap_start))
     (PrintAscii)
     (PrintDecimal)
+    (CrLf)
 
     (main)
 

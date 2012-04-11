@@ -15,6 +15,17 @@
   )
 )
 
+(defn CrLf []
+  (concat
+    (label :crlf)
+    (DIV (ram cursor-location), 32)
+    (MUL (ram cursor-location), 32)
+    (ADD (ram cursor-location), 32)
+    (MOD (ram cursor-location), screen-size)
+    (return)
+  )
+)
+
 (defn PrintDecimal []
   (concat
     (label :print_decimal)
