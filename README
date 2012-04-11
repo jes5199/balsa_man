@@ -1,11 +1,27 @@
 Here's a little DSL in clojure for writing DCPU16 assembler.
 I could imagine it growing into a macro language.
 
-So far I've implemented only malloc and free. They might be generally useful, it's too early to know.
+I'm including my general-purpose functions as I implement them.
+So far I've implemented:
+  malloc and free (using a linked list within a preset memory range)
+  sqrt
+  sqrt for 32bit words (returns a newly malloced struct of [low-word, high-word])
+  displaying decimal numbers (16 bit words only) to the screen
+
+  ASM output
+
 
 TODO:
+  display for 32bit numbers
+  ascii strings
+  signed integers
+  fixed-point decimals
+  trigonometry
+  orbital mechanics
+  ballistics
+
   explicit offsets:
-    I should support the ORG instruction
+    I should support the ORG instruction or some such so the heap ram is always in the same range
 
   output my own binaries
 
