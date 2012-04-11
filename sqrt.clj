@@ -1,5 +1,6 @@
 (load-file "assembly.clj")
 (load-file "helpers.clj")
+(load-file "math.clj")
 (load-file "malloc.clj")
 
 (defn Sqrt []

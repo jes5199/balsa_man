@@ -1,2 +1,2 @@
 mkdir -p out
-clj malloc.clj > out/malloc.asm
+clj sqrt.clj > out/sqrt.asm
