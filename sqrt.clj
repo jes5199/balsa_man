@@ -2,6 +2,7 @@
 (load-file "helpers.clj")
 (load-file "math.clj")
 (load-file "malloc.clj")
+(load-file "display.clj")
 
 (defn Sqrt []
   (concat
@@ -104,6 +105,9 @@
     (SET X, 0x4000)
     (JSR :sqrt)
 
+    (SET C, X)
+    (JSR :print_decimal)
+
     (label :crash) (goto :crash)
   )
 )
@@ -117,6 +121,8 @@
     (Sqrt32)
     (Malloc (label-address :heap_start))
     (Free (label-address :heap_start))
+    (PrintAscii)
+    (PrintDecimal)
 
     (main)
 
