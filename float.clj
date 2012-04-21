@@ -165,42 +165,53 @@
   )
 )
 
+(defn negativeHalf [x]
+  (bit-xor 0x8000 x)
+)
+
+(declare subtractHalfs)
+
 (defn addHalfs [a b]
   ;(println [ (halfExponent a) (halfMantissa a) :+ (halfExponent b) (halfMantissa b) ] )
   ; it's something like, shift the lesser one left
   ; then add mantissas
-  ;
-  ; TODO: negatives
   (let [
       signA (halfSign a)
       signB (halfSign b)
       expA (halfEffectiveExponent a)
       expB (halfEffectiveExponent b)
     ]
-    (if (< expA expB)
-        (recur b a)
-        ( let
-          [bitsA (halfMantissa a)
-           bitsB (bit-shift-right (halfMantissa b) (- expA expB))
-          ]
-          (mkHalfNormalizing signA expA (+ bitsA bitsB))
-        )
+    (if (not= signA signB)
+      (subtractHalfs a (negativeHalf b))
+      (if (< expA expB)
+          (recur b a)
+          ( let
+            [bitsA (halfMantissa a)
+             bitsB (bit-shift-right (halfMantissa b) (- expA expB))
+            ]
+            (mkHalfNormalizing signA expA (+ bitsA bitsB))
+          )
+      )
     )
   )
 )
 
 (defn subtractHalfs [a b]
+  ; TODO: b > a
   (let [
       signA (halfSign a)
       signB (halfSign b)
       expA (halfEffectiveExponent a)
       expB (halfEffectiveExponent b)
     ]
-    ( let
-      [bitsA (halfMantissa a)
-       bitsB (bit-shift-right (halfMantissa b) (- expA expB))
-      ]
-      (mkHalfNormalizing signA expA (- bitsA bitsB))
+    (if (not= signA signB)
+      (addHalfs a (negativeHalf b))
+      ( let
+        [bitsA (halfMantissa a)
+         bitsB (bit-shift-right (halfMantissa b) (- expA expB))
+        ]
+        (mkHalfNormalizing signA expA (- bitsA bitsB))
+      )
     )
   )
 )
@@ -241,5 +252,5 @@
 ; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue (pow 2 -15)))))
 ; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue 2.0))))
 
-(println (prettyHalf (subtractHalfs (halfValue 6.5) (halfValue 6.0))))
+(println (prettyHalf (subtractHalfs (halfValue 8.5) (halfValue -7.5))))
 
