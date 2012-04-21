@@ -189,6 +189,22 @@
   )
 )
 
+(defn subtractHalfs [a b]
+  (let [
+      signA (halfSign a)
+      signB (halfSign b)
+      expA (halfEffectiveExponent a)
+      expB (halfEffectiveExponent b)
+    ]
+    ( let
+      [bitsA (halfMantissa a)
+       bitsB (bit-shift-right (halfMantissa b) (- expA expB))
+      ]
+      (mkHalfNormalizing signA expA (- bitsA bitsB))
+    )
+  )
+)
+
 (defn minus [sign]
   (if sign
     "-"
@@ -225,5 +241,5 @@
 ; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue (pow 2 -15)))))
 ; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue 2.0))))
 
-(println (prettyHalf (addHalfs (halfValue 5.0) (halfValue 6.0))))
+(println (prettyHalf (subtractHalfs (halfValue 6.5) (halfValue 6.0))))
 
