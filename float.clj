@@ -100,11 +100,12 @@
 )
 
 (defn mkHalfNormalizing [sign exponent mantissa]
-  (println [sign exponent mantissa])
-  (if (> mantissa 0x400 )
+  ;TODO: rounding
+  ;(println [sign exponent mantissa])
+  (if (> mantissa 0x7FF )
     ; overflows mantissa
     (do
-      (println :overflow_mantissa)
+      ;(println :overflow_mantissa)
       (recur sign (+ exponent 1) (bit-shift-right mantissa 1) )
     )
 
@@ -115,13 +116,13 @@
         ( if ( < exponent -14 )
           ;shift towards being an underflow
           (do
-            (println :shift_toward_underflow)
+            ;(println :shift_toward_underflow)
             (recur sign (+ exponent 1) (bit-shift-right mantissa 1) )
           )
 
           ;shift towards mantissa being in the 1s column
           (do
-            (println :shift_toward_normal)
+            ;(println :shift_toward_normal)
             (recur sign (- exponent 1) (bit-shift-left  mantissa 1) )
           )
         )
@@ -148,7 +149,7 @@
 
 ; for reference, let's write this in clj and port it to dcpu later
 (defn multiplyHalfs [a b]
-  (println [ (halfExponent a) (halfMantissa a) :* (halfExponent b) (halfMantissa b) ] )
+  ;(println [ (halfExponent a) (halfMantissa a) :* (halfExponent b) (halfMantissa b) ] )
   (cond
     (or  (halfIsNaN a)      (halfIsNaN b))      (halfNaN)
     (and (halfIsInfinite a) (halfIsZero b))     (halfNaN)
@@ -159,13 +160,33 @@
     true (mkHalfNormalizing
           (xor (halfSign a) (halfSign b))
           (+ (halfEffectiveExponent a) (halfEffectiveExponent b) -10)
-          ;(bit-shift-right (* (halfMantissa a) (halfMantissa b)) 10)
           (* (halfMantissa a) (halfMantissa b))
          )
   )
 )
 
 (defn addHalfs [a b]
+  ;(println [ (halfExponent a) (halfMantissa a) :+ (halfExponent b) (halfMantissa b) ] )
+  ; it's something like, shift the lesser one left
+  ; then add mantissas
+  ;
+  ; TODO: negatives
+  (let [
+      signA (halfSign a)
+      signB (halfSign b)
+      expA (halfEffectiveExponent a)
+      expB (halfEffectiveExponent b)
+    ]
+    (if (< expA expB)
+        (recur b a)
+        ( let
+          [bitsA (halfMantissa a)
+           bitsB (bit-shift-right (halfMantissa b) (- expA expB))
+          ]
+          (mkHalfNormalizing signA expA (+ bitsA bitsB))
+        )
+    )
+  )
 )
 
 (defn minus [sign]
@@ -198,8 +219,11 @@
 ; (println (multiplyHalfs (halfValue 1.0) (halfValue 4.0)))
 ; (println (multiplyHalfs (halfValue 0.5) (halfValue 8.0)))
 
-(println (prettyHalf (halfValue (pow 2 -14))))
-(println (prettyHalf (halfValue (pow 2 -15))))
-(println (prettyHalf (halfValue 2.0)))
-(println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue (pow 2 -15)))))
-(println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue 2.0))))
+; (println (prettyHalf (halfValue (pow 2 -14))))
+; (println (prettyHalf (halfValue (pow 2 -15))))
+; (println (prettyHalf (halfValue 2.0)))
+; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue (pow 2 -15)))))
+; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue 2.0))))
+
+(println (prettyHalf (addHalfs (halfValue 5.0) (halfValue 6.0))))
+
