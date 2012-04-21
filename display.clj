@@ -56,5 +56,39 @@
     (SET B, POP)
     (SET A, POP)
     (return)
+
+  )
+)
+
+(defn PrintDecimal32 []
+  (concat
+    (label :print_decimal)
+    (SET PUSH, A)
+    (SET PUSH, B)
+    (SET A, X)
+    (SET B, 10000)
+
+    (label :print_decimal_shrink_b)
+    (IFG A, B)
+    (goto :print_decimal_digit)
+    (DIV B, 10)
+    (goto :print_decimal_shrink_b)
+
+    (label :print_decimal_digit)
+    (SET C, A)
+    (DIV C, B)
+    (MOD C, 10)
+    (ADD C, 48)
+
+    (SET X, C)
+    (JSR :print_ascii)
+
+    (DIV B, 10)
+    (IFN B, 0)
+    (goto :print_decimal_digit)
+
+    (SET B, POP)
+    (SET A, POP)
+    (return)
   )
 )
