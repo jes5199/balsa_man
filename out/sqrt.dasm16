@@ -18,15 +18,15 @@ IFE [0x0001+Y], 0x0000
 SET PC, div32by32_exit
 SHR [X], 0x0001
 SHR [0x0001+X], 0x0001
-ADD [X], O
+ADD [X], EX
 SHR [Y], 0x0001
 SHR [0x0001+Y], 0x0001
-ADD [Y], O
+ADD [Y], EX
 SET PC, div32by32_next
 :div32by32_exit
 DIV [X], [Y]
 DIV [0x0001+X], [Y]
-ADD [X], O
+ADD [X], EX
 SET PUSH, X
 SET X, Y
 JSR free
@@ -75,11 +75,11 @@ SET X, B
 SET Y, A
 JSR div32by32
 ADD [X], [A]
-ADD [0x0001+X], O
+ADD [0x0001+X], EX
 ADD [0x0001+X], [0x0001+A]
 DIV [X], 0x0002
 DIV [0x0001+X], 0x0002
-ADD [X], O
+ADD [X], EX
 SET [A], [X]
 SET [0x0001+A], [0x0001+X]
 JSR free

@@ -18,7 +18,7 @@
 (def Z    :X   )
 (def I    :I   )
 (def J    :J   )
-(def O    :O   ) ; overflow
+(def EX   :EX  ) ; overflow
 
 (defn register-plus [register literal] [:register-plus register literal])
 (defn literal [value] [[:literal value]])

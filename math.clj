@@ -1,14 +1,14 @@
 (defn add32plus16 [high low plus]
   (concat
     (ADD low, plus)
-    (ADD high, O)
+    (ADD high, EX)
   )
 )
 
 (defn add32plus32 [high low plushigh pluslow]
   (concat
     (ADD low, pluslow)
-    (ADD high, O)
+    (ADD high, EX)
     (ADD high, plushigh)
   )
 )
@@ -18,7 +18,7 @@
   (concat
     (DIV low, divisor)
     (DIV high, divisor)
-    (ADD low, O)
+    (ADD low, EX)
   )
 )
 
@@ -26,7 +26,7 @@
   (concat
     (SHR low, amount)
     (SHR high, amount)
-    (ADD low, O)
+    (ADD low, EX)
   )
 )
 
