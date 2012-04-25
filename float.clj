@@ -66,10 +66,15 @@
 )
 
 (defn halfMantissa [x]
+  (bit-and 0x03ff (int x))
+)
+
+(defn halfEffectiveMantissa [x]
   (let [impliedOne (if (== -15 (halfExponent x)) 0 0x0400) ]
-    (bit-or impliedOne (bit-and 0x03ff (int x)))
+    (bit-or impliedOne (halfMantissa x))
   )
 )
+
 
 (defn halfSign [x]
   (> (bit-and 0x8000 x) 0)
@@ -160,7 +165,7 @@
     true (mkHalfNormalizing
           (xor (halfSign a) (halfSign b))
           (+ (halfEffectiveExponent a) (halfEffectiveExponent b) -10)
-          (* (halfMantissa a) (halfMantissa b))
+          (* (halfEffectiveMantissa a) (halfEffectiveMantissa b))
          )
   )
 )
@@ -175,22 +180,29 @@
   ;(println [ (halfExponent a) (halfMantissa a) :+ (halfExponent b) (halfMantissa b) ] )
   ; it's something like, shift the lesser one left
   ; then add mantissas
-  (let [
-      signA (halfSign a)
-      signB (halfSign b)
-      expA (halfEffectiveExponent a)
-      expB (halfEffectiveExponent b)
-    ]
-    (if (not= signA signB)
-      (subtractHalfs a (negativeHalf b))
-      (if (< expA expB)
-          (recur b a)
-          ( let
-            [bitsA (halfMantissa a)
-             bitsB (bit-shift-right (halfMantissa b) (- expA expB))
-            ]
-            (mkHalfNormalizing signA expA (+ bitsA bitsB))
-          )
+  (cond
+    (or  (halfIsNaN a)      (halfIsNaN b))      (halfNaN)
+    (and (halfIsInfinite a) (halfIsInfinite b)) (if (= a b) a (halfNaN) )
+    (halfIsInfinite a) a
+    (halfIsInfinite b) b
+
+    true (let [
+        signA (halfSign a)
+        signB (halfSign b)
+        expA (halfEffectiveExponent a)
+        expB (halfEffectiveExponent b)
+      ]
+      (if (not= signA signB)
+        (subtractHalfs a (negativeHalf b))
+        (if (< expA expB)
+            (recur b a)
+            ( let
+              [bitsA (halfEffectiveMantissa a)
+               bitsB (bit-shift-right (halfEffectiveMantissa b) (- expA expB))
+              ]
+              (mkHalfNormalizing signA expA (+ bitsA bitsB))
+            )
+        )
       )
     )
   )
@@ -198,19 +210,26 @@
 
 (defn subtractHalfs [a b]
   ; TODO: b > a
-  (let [
-      signA (halfSign a)
-      signB (halfSign b)
-      expA (halfEffectiveExponent a)
-      expB (halfEffectiveExponent b)
-    ]
-    (if (not= signA signB)
-      (addHalfs a (negativeHalf b))
-      ( let
-        [bitsA (halfMantissa a)
-         bitsB (bit-shift-right (halfMantissa b) (- expA expB))
-        ]
-        (mkHalfNormalizing signA expA (- bitsA bitsB))
+  (cond
+    (or  (halfIsNaN a)      (halfIsNaN b))      (halfNaN)
+    (and (halfIsInfinite a) (halfIsInfinite b)) (if (= a b) (halfNaN) a )
+    (halfIsInfinite a) a
+    (halfIsInfinite b) b
+
+    true (let [
+        signA (halfSign a)
+        signB (halfSign b)
+        expA (halfEffectiveExponent a)
+        expB (halfEffectiveExponent b)
+      ]
+      (if (not= signA signB)
+        (addHalfs a (negativeHalf b))
+        ( let
+          [bitsA (halfEffectiveMantissa a)
+           bitsB (bit-shift-right (halfEffectiveMantissa b) (- expA expB))
+          ]
+          (mkHalfNormalizing signA expA (- bitsA bitsB))
+        )
       )
     )
   )
@@ -227,18 +246,29 @@
   (format "%010d" (Long/parseLong (Integer/toString x 2)))
 )
 
-(defn prettyHalf [x]
-  (condp apply [x]
-    halfIsNaN (str "NaN:" (minus (halfSign x)) (halfMantissa x))
-    halfIsZero (str (minus (halfSign x)) "0")
-    halfIsSubnormal (str (minus (halfSign x)) "0." (binary (halfMantissa x)) "b*2^-14" )
+(defn unHalf [x]
+  (if (halfIsZero x)
+    0
+    (* (halfEffectiveMantissa x) (pow 2 ( - ( halfEffectiveExponent x ) 10 ) ))
+  )
+)
 
-    (str (minus (halfSign x)) "1." (binary (bit-and 0x3FF (halfMantissa x))) "b*2^" (halfExponent x) )
+(defn prettyHalf [x]
+  (let [mantissa (halfMantissa x)]
+    (condp apply [x]
+      halfIsNaN (str "NaN:" (minus (halfSign x)) mantissa)
+      halfIsInfinite (str (minus (halfSign x)) "Infinity")
+      halfIsZero (str (minus (halfSign x)) "0")
+      halfIsSubnormal (str "(" (minus (halfSign x)) "0." (binary mantissa) "b*2^-14" " = " (unHalf x) ")" )
+
+      (str "(" (minus (halfSign x)) "1." (binary mantissa) "b*2^" (halfExponent x) " = " (unHalf x) ")" )
+    )
   )
 )
 
 ; (println (halfValue 2.0))
 ; (println (halfValue (* 2 (pow 2 -24))))
+
 ; (println (multiplyHalfs (halfValue 2.0) (halfValue (pow 2 -24))))
 ; (println (multiplyHalfs (halfValue 4.0) (halfValue (pow 2 -24))))
 ; (println (halfValue 4.0))
@@ -252,5 +282,27 @@
 ; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue (pow 2 -15)))))
 ; (println (prettyHalf (multiplyHalfs (halfValue 2.0) (halfValue 2.0))))
 
-(println (prettyHalf (subtractHalfs (halfValue 8.5) (halfValue -7.5))))
+(def subtractionTests
+  [
+    (map halfValue [1 1 0])
+    (map halfValue [1 0.5 0.5])
+    (map halfValue [1 0.1 0.900390625]) ; oof!
+    (map halfValue [200 1 199])
+    (map halfValue [10000 9000 1000])
+    (map halfValue [10000 9900 104]) ; oof!
+    (map halfValue [65536 10000 65536]) ; infinity
+    [(halfValue 65536) (halfValue 65536) (halfNaN)] ; NaN!
+  ]
+)
+
+(defn test-arith [f p [a b c]]
+  (let [result (f a b)]
+    (if (= result c)
+      nil
+      (println f (p a) (p b) "=" (p result) "!=" (p c))
+    )
+  )
+)
+
+(doall (map (partial test-arith subtractHalfs prettyHalf) subtractionTests))
 
