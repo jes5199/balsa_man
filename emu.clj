@@ -21,7 +21,7 @@
 )
 
 (defn fcpuSet [fcpu dest src]
-  (println [:SET dest src])
+  ;(println [:SET dest src])
   (condp apply [dest]
     registers (update-in fcpu [:registers] assoc dest src)
     fcpu
@@ -29,7 +29,7 @@
 )
 
 (defn fcpuGet [fcpu src]
-  (println [:GET src])
+  ;(println [:GET src])
   (condp apply [src]
     integer?  [fcpu, src]
     registers [fcpu, (get-in fcpu [:registers src])]
@@ -38,8 +38,8 @@
 )
 
 
-(defn fcpuAdd [fcpu b a]
-  (println [:ADD b a])
+(defn fcpuAdd1[fcpu b a]
+  ;(println [:ADD b a])
   (let [
       [fcpu1 v1] (fcpuGet fcpu  a)
       [fcpu2 v2] (fcpuGet fcpu1 b)
@@ -50,6 +50,56 @@
     fcpu4
   )
 )
+
+(defmacro let-> [input pairs result]
+  (let [state (gensym "state")]
+    ( list
+      'let
+        (vec
+          (cons state (cons input
+            (mapcat
+              (fn [[a b]] [ [state a] (concat (list (first b) state) (rest b)) ])
+              (partition 2 pairs)
+            )
+        ) ) )
+      [state result]
+    )
+  )
+)
+
+(defn fcpuAdd[fcpu b a]
+  ;(println [:ADD b a])
+  ( let [
+    [fcpu answer]
+    ( let-> fcpu
+      [
+        v1 (fcpuGet  a)
+        v2 (fcpuGet  b)
+      ]
+      (+ v1 v2)
+    )
+    ]
+    (-> fcpu
+        (fcpuSet b (mod answer 0x10000))
+        (fcpuSet :EX (unchecked-divide answer 0x10000))
+    )
+  )
+)
+
+
+(defn fcpuSub [fcpu b a]
+  ;(println [:SUB b a])
+  (let [
+      [fcpu1 v1] (fcpuGet fcpu  a)
+      [fcpu2 v2] (fcpuGet fcpu1 b)
+      answer (- v1 v2)
+      fcpu3 (fcpuSet fcpu2 b (mod answer 0x10000))
+      fcpu4 (fcpuSet fcpu3 :EX (unchecked-divide answer 0x10000))
+    ]
+    fcpu4
+  )
+)
+
 
 (defn symbolicJmp [amount symbolicPointer]
   (cond
@@ -66,12 +116,19 @@
   (update-in fcpu [:registers :PC] (partial symbolicJmp 1) )
 )
 
+(def instructionFunctions
+  {
+    :SET fcpuSet
+    :ADD fcpuAdd
+    :SUB nil
+  }
+)
+
 (defn fcpuExecuteInstruction [fcpu instruction]
-  (println [:executing instruction])
-  (let [applyRest (fn [f] (apply (partial f fcpu) (rest instruction)))]
-    (condp = (first instruction)
-      :SET (applyRest fcpuSet)
-      :ADD (applyRest fcpuAdd)
+  ;(println [:executing instruction])
+  (let [applyInstructionFunction (fn [f] (apply (partial f fcpu) (rest instruction)))]
+    (condp apply [(first instruction)]
+      instructionFunctions :>> applyInstructionFunction
       (fcpuDecPC fcpu)
     )
   )
@@ -123,7 +180,7 @@
 (defn addTest []
   (let [r (fcpuGet (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :addTest addTestProgram ) :addTest ) :A )]
     (do
-      (println r)
+      ;(println r)
       (assert (= (second r) 3))
     )
   )
@@ -136,13 +193,13 @@
       [_ ex] (fcpuGet state :EX)
     ]
     (do
-      (println state)
+      ;(println state)
       (assert (= a  0))
       (assert (= ex 1))
     )
   )
 )
 
-;(addTest)
+(addTest)
 (addCarryTest)
 
