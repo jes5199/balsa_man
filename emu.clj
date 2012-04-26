@@ -20,14 +20,6 @@
   }
 )
 
-(defn fcpuSet [fcpu dest src]
-  ;(println [:SET dest src])
-  (condp apply [dest]
-    registers (update-in fcpu [:registers] assoc dest src)
-    fcpu
-  )
-)
-
 (defn fcpuGet [fcpu src]
   ;(println [:GET src])
   (condp apply [src]
@@ -37,66 +29,37 @@
   )
 )
 
-
-(defn fcpuAdd1[fcpu b a]
-  ;(println [:ADD b a])
-  (let [
-      [fcpu1 v1] (fcpuGet fcpu  a)
-      [fcpu2 v2] (fcpuGet fcpu1 b)
-      answer (+ v1 v2)
-      fcpu3 (fcpuSet fcpu2 b (mod answer 0x10000))
-      fcpu4 (fcpuSet fcpu3 :EX (unchecked-divide answer 0x10000))
-    ]
-    fcpu4
+(defn fcpuSet [fcpu dest src]
+  (condp apply [dest]
+    registers (update-in fcpu [:registers] assoc dest src)
+    fcpu
   )
 )
 
-(defmacro let-> [input pairs result]
-  (let [state (gensym "state")]
-    ( list
-      'let
-        (vec
-          (cons state (cons input
-            (mapcat
-              (fn [[a b]] [ [state a] (concat (list (first b) state) (rest b)) ])
-              (partition 2 pairs)
-            )
-        ) ) )
-      [state result]
-    )
-  )
-)
 
 (defn fcpuAdd[fcpu b a]
   ;(println [:ADD b a])
-  ( let [
-    [fcpu answer]
-    ( let-> fcpu
-      [
-        v1 (fcpuGet  a)
-        v2 (fcpuGet  b)
-      ]
-      (+ v1 v2)
-    )
+  (let [
+      [fcpu v1] (fcpuGet fcpu a)
+      [fcpu v2] (fcpuGet fcpu b)
+      answer (+ v2 v1)
+      fcpu (fcpuSet fcpu b   (mod answer 0x10000))
+      fcpu (fcpuSet fcpu :EX (bit-shift-right answer 16))
     ]
-    (-> fcpu
-        (fcpuSet b (mod answer 0x10000))
-        (fcpuSet :EX (unchecked-divide answer 0x10000))
-    )
+    fcpu
   )
 )
-
 
 (defn fcpuSub [fcpu b a]
   ;(println [:SUB b a])
   (let [
-      [fcpu1 v1] (fcpuGet fcpu  a)
-      [fcpu2 v2] (fcpuGet fcpu1 b)
-      answer (- v1 v2)
-      fcpu3 (fcpuSet fcpu2 b (mod answer 0x10000))
-      fcpu4 (fcpuSet fcpu3 :EX (unchecked-divide answer 0x10000))
+      [fcpu v1] (fcpuGet fcpu a)
+      [fcpu v2] (fcpuGet fcpu b)
+      answer (- v2 v1)
+      fcpu (fcpuSet fcpu b   (mod answer 0x10000))
+      fcpu (fcpuSet fcpu :EX (mod (bit-shift-right answer 16) 0x10000))
     ]
-    fcpu4
+    fcpu
   )
 )
 
@@ -120,7 +83,7 @@
   {
     :SET fcpuSet
     :ADD fcpuAdd
-    :SUB nil
+    :SUB fcpuSub
   }
 )
 
@@ -176,12 +139,34 @@
   )
 )
 
+(def subTestProgram
+  (vec
+    (concat
+      (SET A, 0x3)
+      (SUB A, 0x2)
+    )
+  )
+)
+
+(def subBorrowTestProgram
+  (vec
+    (concat
+      (SET A, 0x1)
+      (SUB A, 0xFFFF)
+    )
+  )
+)
 
 (defn addTest []
-  (let [r (fcpuGet (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :addTest addTestProgram ) :addTest ) :A )]
+  (let [
+      state (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :addTest addTestProgram ) :addTest )
+      [_ a]  (fcpuGet state :A)
+      [_ ex] (fcpuGet state :EX)
+    ]
     (do
-      ;(println r)
-      (assert (= (second r) 3))
+      ;(println state)
+      (assert (= a  3))
+      (assert (= ex 0))
     )
   )
 )
@@ -200,6 +185,36 @@
   )
 )
 
+(defn subTest []
+  (let [
+      state (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :subTest subTestProgram ) :subTest )
+      [_ a]  (fcpuGet state :A)
+      [_ ex] (fcpuGet state :EX)
+    ]
+    (do
+      ;(println state)
+      (assert (= a  1))
+      (assert (= ex 0))
+    )
+  )
+)
+
+(defn subBorrowTest []
+  (let [
+      state (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :subBorrowTest subBorrowTestProgram ) :subBorrowTest )
+      [_ a]  (fcpuGet state :A)
+      [_ ex] (fcpuGet state :EX)
+    ]
+    (do
+      ;(println state)
+      (assert (= a  2))
+      (assert (= ex 0xFFFF))
+    )
+  )
+)
+
 (addTest)
 (addCarryTest)
+(subTest)
+(subBorrowTest)
 
