@@ -23,7 +23,7 @@
 (defn fcpuSet [fcpu dest src]
   (println [:SET dest src])
   (condp apply [dest]
-    #{:A :PC} (update-in fcpu [:registers] assoc dest src)
+    registers (update-in fcpu [:registers] assoc dest src)
     fcpu
   )
 )
@@ -32,7 +32,7 @@
   (println [:GET src])
   (condp apply [src]
     integer?  [fcpu, src]
-    #{:A :PC} [fcpu, (get-in fcpu [:registers src])]
+    registers [fcpu, (get-in fcpu [:registers src])]
               [fcpu, (get-in fcpu src)]
   )
 )
@@ -44,9 +44,10 @@
       [fcpu1 v1] (fcpuGet fcpu  a)
       [fcpu2 v2] (fcpuGet fcpu1 b)
       answer (+ v1 v2)
-      fcpu3 (fcpuSet fcpu b answer)
+      fcpu3 (fcpuSet fcpu2 b (mod answer 0x10000))
+      fcpu4 (fcpuSet fcpu3 :EX (unchecked-divide answer 0x10000))
     ]
-    fcpu3
+    fcpu4
   )
 )
 
@@ -109,6 +110,15 @@
   )
 )
 
+(def addCarryTestProgram
+  (vec
+    (concat
+      (SET A, 0xFFFF)
+      (ADD A, 0x1)
+    )
+  )
+)
+
 
 (defn addTest []
   (let [r (fcpuGet (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :addTest addTestProgram ) :addTest ) :A )]
@@ -119,4 +129,20 @@
   )
 )
 
-(addTest)
+(defn addCarryTest []
+  (let [
+      state (fcpuRunProgram (fcpuLoadProgram (mkFCPU) :addCarryTest addCarryTestProgram ) :addCarryTest )
+      [_ a]  (fcpuGet state :A)
+      [_ ex] (fcpuGet state :EX)
+    ]
+    (do
+      (println state)
+      (assert (= a  0))
+      (assert (= ex 1))
+    )
+  )
+)
+
+;(addTest)
+(addCarryTest)
+

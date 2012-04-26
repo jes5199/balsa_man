@@ -15,10 +15,19 @@
 (def C    :C   )
 (def X    :X   )
 (def Y    :Y   )
-(def Z    :X   )
+(def Z    :Z   )
 (def I    :I   )
 (def J    :J   )
 (def EX   :EX  ) ; overflow
+
+(def registers #{
+  :PUSH :POP
+  :PC   :SP
+  :A    :B   :C
+  :X    :Y   :Z
+  :I    :J
+  :EX
+})
 
 (defn register-plus [register literal] [:register-plus register literal])
 (defn literal [value] [[:literal value]])
